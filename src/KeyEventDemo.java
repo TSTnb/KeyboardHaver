@@ -11,11 +11,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class KeyEventDemo extends JFrame implements KeyListener {
+    private final static String FIFO_DIR = "/data/fifo";
+    private final static String INPUT_DIR = FIFO_DIR + "/inputs";
     JTextField typingArea;
-    final Map<Integer, String> keyFileMap;
+    final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
     final Runtime runtime;
-    Process inputRelay;
+    Process inputRelayProcess;
     Process inputProcess;
     OutputStream thingToSendTo;
     OutputStreamWriter thingToSendWith;
@@ -38,10 +40,101 @@ public class KeyEventDemo extends JFrame implements KeyListener {
         keyFileMap = new HashMap<>();
         isPressed = new HashMap<>();
         buttons.forEach(button -> {
-            keyFileMap.put(button.getKeyCode(), button.getName());
+            keyFileMap.put(button.getKeyCode(), button);
             isPressed.put(button.getKeyCode(), false);
         });
 
+        StartInputRelay();
+        StartInputSendingProcess();
+    }
+
+    protected int RandomInt(int min, int max) {
+        return min + (int) (Math.random() * (max - min) + 1);
+    }
+
+    protected String BuildUpInputFile(final String device) {
+        final String sendEvent = "sendevent " + device;
+        return "" +
+                sendEvent + " 3 57 " + 0xffffffff + ";\n" +
+                sendEvent + " 1 330 0" + ";\n" +
+                sendEvent + " 0 0 0" + ";\n";
+    }
+
+    protected String BuildInputFile(final PrimeTimeButton button, final String device) {
+        final String sendEvent = "sendevent " + device;
+        return "" +
+                sendEvent + " 3 57 " + (button.getXPosition() + RandomInt(377, 395)) + ";\n" +
+                sendEvent + " 1 330 1" + ";\n" +
+                sendEvent + " 3 50 " + (RandomInt(4, 11)) + ";\n" +
+                sendEvent + " 3 53 " + (button.getXPosition() + RandomInt(-10, 10)) + ";\n" +
+                sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
+                sendEvent + " 0 0 0" + ";\n";
+    }
+
+    protected String GetDevice() {
+        return "/dev/input/event4";
+    }
+
+    protected String BuildWriteInputFile(final String inputFileContents, final String name) {
+        final String inputFile = INPUT_DIR + "/" + name;
+        String inputCat = "<<INPUT_FILE cat > " + inputFile + ";\n";
+        return "" +
+                inputCat +
+                inputFileContents +
+                "INPUT_FILE\n" +
+                "chmod +x " + inputFile + "\n";
+    }
+
+    protected String BuildWriteInputFilesCommand() {
+        final String device = GetDevice();
+        final StringBuilder commandBuilder = new StringBuilder();
+
+        commandBuilder.append("input_dir=" + INPUT_DIR + ";\n");
+        commandBuilder.append("if [[ ! -d $input_dir ]]; then" + "\n");
+        commandBuilder.append("  rm -rf $input_dir;" + "\n");
+        commandBuilder.append("  mkdir -p $input_dir;" + "\n");
+        commandBuilder.append("fi;" + "\n");
+        commandBuilder.append("cd $input_dir;" + "\n");
+
+        keyFileMap.forEach((keyCode, button) -> commandBuilder.append(BuildWriteInputFile(BuildInputFile(button, device), button.getName())));
+        commandBuilder.append(BuildWriteInputFile(BuildUpInputFile(device), "up"));
+        return commandBuilder.toString();
+    }
+
+    protected String RelayCommand() {
+        return "" +
+                "fifo_dir=" + FIFO_DIR + ";" + "\n" +
+                "if [[ ! -d $fifo_dir ]]; then" + "\n" +
+                "  rm -rf $fifo_dir;" + "\n" +
+                "  mkdir -p $fifo_dir;" + "\n" +
+                "fi;" + "\n" +
+                "cd $fifo_dir;" + "\n" +
+                "fifo=fifo;" + "\n" +
+                "if [[ ! -p $fifo ]]; then" + "\n" +
+                "  rm -rf $fifo;" + "\n" +
+                "  mkfifo $fifo;" + "\n" +
+                "fi;" + "\n" +
+                "while true; do" + "\n" +
+                "  while IFS= read -r command; do" + "\n" +
+                "    inputs/${command};" + "\n" +
+                "  done;" + "\n" +
+                "done <$fifo;";
+    }
+
+    protected void StartInputRelay() {
+        String[] command = new String[]{"adb", "shell", "su"};
+        try {
+            inputRelayProcess = runtime.exec(command);
+            OutputStreamWriter stdinWriter = new OutputStreamWriter(inputRelayProcess.getOutputStream());
+            stdinWriter.write(BuildWriteInputFilesCommand());
+            stdinWriter.write(RelayCommand());
+            stdinWriter.flush();
+        } catch (IOException ioException) {
+            System.out.println("Unable to start input relay process: " + ioException.getMessage());
+        }
+    }
+
+    protected void StartInputSendingProcess() {
         String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "'cat > /data/fifo/fifo'"};
         try {
             inputProcess = runtime.exec(pipeCommand);
@@ -70,7 +163,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
         }
         isPressed.replace(keyCode, true);
         try {
-            thingToSendWith.write(keyFileMap.get(keyCode) + "\n");
+            thingToSendWith.write(keyFileMap.get(keyCode).getName() + "\n");
             thingToSendWith.flush();
         } catch (IOException ioException) {
             System.out.println("Problem sending input: " + ioException.getMessage());
@@ -85,7 +178,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
             /*isPressed.forEach((keyCode, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
-                        thingToSendWith.write(keyFileMap.get(keyCode) + "\n");
+                        thingToSendWith.write(keyFileMap.get(keyCode).getName() + "\n");
                     } catch (IOException ioException) {
                         System.out.println("problem sending thing: " + ioException.getMessage());
                     }
