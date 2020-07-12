@@ -65,12 +65,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
 
     public void keyPressed(KeyEvent event) {
         int keyCode = event.getKeyCode();
-        try {
-            if (isPressed.get(keyCode)) {
-                return;
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        if (isPressed.get(keyCode)) {
             return;
         }
         isPressed.replace(keyCode, true);
