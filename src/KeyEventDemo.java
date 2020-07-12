@@ -6,13 +6,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class KeyEventDemo extends JFrame implements KeyListener {
     JTextField typingArea;
-    Map<Integer, String> keyFileMap;
-    Map<Integer, Boolean> isPressed;
-    Runtime runtime;
+    final Map<Integer, String> keyFileMap;
+    final Map<Integer, Boolean> isPressed;
+    final Runtime runtime;
+    Process inputRelay;
     Process inputProcess;
     OutputStream thingToSendTo;
     OutputStreamWriter thingToSendWith;
@@ -20,27 +23,24 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     public KeyEventDemo(final String name) {
         super(name);
         runtime = Runtime.getRuntime();
+
+        Set<PrimeTimeButton> buttons = new HashSet<>();
+        buttons.add(new PrimeTimeButton("hard-drop", 32, 257, 2031));
+
+        buttons.add(new PrimeTimeButton("right", 76, 373, 2146));
+        buttons.add(new PrimeTimeButton("down", 75, 256, 2260));
+        buttons.add(new PrimeTimeButton("left", 74, 137, 2145));
+
+        buttons.add(new PrimeTimeButton("ccw", 83, 748, 2153));
+        buttons.add(new PrimeTimeButton("cw", 68, 948, 2040));
+        buttons.add(new PrimeTimeButton("hold", 70, 949, 1827));
+
         keyFileMap = new HashMap<>();
-        keyFileMap.put(83, "ccw");
-        keyFileMap.put(68, "cw");
-        keyFileMap.put(70, "hold");
-
-        keyFileMap.put(74, "left");
-        keyFileMap.put(75, "down");
-        keyFileMap.put(76, "right");
-
-        keyFileMap.put(32, "hard-drop");
-
         isPressed = new HashMap<>();
-        isPressed.put(83, false);
-        isPressed.put(68, false);
-        isPressed.put(70, false);
-
-        isPressed.put(74, false);
-        isPressed.put(75, false);
-        isPressed.put(76, false);
-
-        isPressed.put(32, false);
+        buttons.forEach(button -> {
+            keyFileMap.put(button.getKeyCode(), button.getName());
+            isPressed.put(button.getKeyCode(), false);
+        });
 
         String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "'cat > /data/fifo/fifo'"};
         try {
@@ -119,5 +119,35 @@ public class KeyEventDemo extends JFrame implements KeyListener {
 
     public static void main(String[] args) {
         javax.swing.SwingUtilities.invokeLater(KeyEventDemo::showStuff);
+    }
+
+    private static class PrimeTimeButton {
+        final String name;
+        final int keyCode;
+        final int xPosition;
+        final int yPosition;
+
+        public PrimeTimeButton(String name, int keyCode, int xPosition, int yPosition) {
+            this.name = name;
+            this.keyCode = keyCode;
+            this.xPosition = xPosition;
+            this.yPosition = yPosition;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getKeyCode() {
+            return keyCode;
+        }
+
+        public int getXPosition() {
+            return xPosition;
+        }
+
+        public int getYPosition() {
+            return yPosition;
+        }
     }
 }
