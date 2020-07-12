@@ -55,7 +55,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
                 System.out.println(line);
             } while (line != null);*/
         } catch (IOException ioException) {
-            System.out.println(ioException.getMessage());
+            System.out.println("Unable to start input-sending process: " + ioException.getMessage());
             System.exit(1);
         }
     }
@@ -73,7 +73,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
             thingToSendWith.write(keyFileMap.get(keyCode) + "\n");
             thingToSendWith.flush();
         } catch (IOException ioException) {
-            System.out.println("problem sending thing: " + ioException.getMessage());
+            System.out.println("Problem sending input: " + ioException.getMessage());
         }
     }
 
@@ -93,7 +93,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
             });*/
             thingToSendWith.flush();
         } catch (IOException ioException) {
-            System.out.println("problem sending up thing: " + ioException.getMessage());
+            System.out.println("Problem releasing key: " + ioException.getMessage());
         }
     }
 
