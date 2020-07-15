@@ -10,7 +10,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class KeyEventDemo extends JFrame implements KeyListener {
+public class KeyboardHaver extends JFrame implements KeyListener {
     private final static String FIFO_DIR = "/data/fifo";
     private final static String INPUT_DIR = FIFO_DIR + "/inputs";
     JTextField typingArea;
@@ -22,7 +22,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     OutputStream thingToSendTo;
     OutputStreamWriter thingToSendWith;
 
-    public KeyEventDemo(final String name) {
+    public KeyboardHaver(final String name) {
         super(name);
         runtime = Runtime.getRuntime();
 
@@ -195,7 +195,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     }
 
     private static void showStuff() {
-        KeyEventDemo frame = new KeyEventDemo("Hey Guys");
+        KeyboardHaver frame = new KeyboardHaver("Plug in phone before starting this, restart if phone gets disconnected");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.addStuff();
         frame.pack();
@@ -203,7 +203,7 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     }
 
     public static void main(String[] args) {
-        javax.swing.SwingUtilities.invokeLater(KeyEventDemo::showStuff);
+        javax.swing.SwingUtilities.invokeLater(KeyboardHaver::showStuff);
     }
 
     private static class PrimeTimeButton {
