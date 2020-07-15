@@ -55,7 +55,6 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     protected String BuildUpInputFile(final String device) {
         final String sendEvent = "sendevent " + device;
         return "" +
-                sendEvent + " 3 57 " + 0xffffffff + ";\n" +
                 sendEvent + " 1 330 0" + ";\n" +
                 sendEvent + " 0 0 0" + ";\n";
     }
@@ -63,11 +62,9 @@ public class KeyEventDemo extends JFrame implements KeyListener {
     protected String BuildInputFile(final PrimeTimeButton button, final String device) {
         final String sendEvent = "sendevent " + device;
         return "" +
-                sendEvent + " 3 57 " + (button.getXPosition() + RandomInt(377, 395)) + ";\n" +
-                sendEvent + " 1 330 1" + ";\n" +
-                sendEvent + " 3 50 " + (RandomInt(4, 11)) + ";\n" +
                 sendEvent + " 3 53 " + (button.getXPosition() + RandomInt(-10, 10)) + ";\n" +
                 sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
+                sendEvent + " 1 330 1" + ";\n" +
                 sendEvent + " 0 0 0" + ";\n";
     }
 
