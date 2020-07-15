@@ -2,7 +2,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
@@ -137,13 +139,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             inputProcess = runtime.exec(pipeCommand);
             thingToSendTo = inputProcess.getOutputStream();
             thingToSendWith = new OutputStreamWriter(thingToSendTo);
-            /*BufferedReader output = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            int exitCode = process.exitValue();
-            String line = "";
-            do {
-                line = output.readLine();
-                System.out.println(line);
-            } while (line != null);*/
         } catch (IOException ioException) {
             System.out.println("Unable to start input-sending process: " + ioException.getMessage());
             System.exit(1);
@@ -163,6 +158,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             thingToSendWith.write(keyFileMap.get(keyCode).getName() + "\n");
             thingToSendWith.flush();
         } catch (IOException ioException) {
+            printStuff(inputProcess);
+            printStuff(inputRelayProcess);
             System.out.println("Problem sending input: " + ioException.getMessage());
         }
     }
@@ -183,7 +180,34 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             });*/
             thingToSendWith.flush();
         } catch (IOException ioException) {
+            printStuff(inputProcess);
+            printStuff(inputRelayProcess);
             System.out.println("Problem releasing key: " + ioException.getMessage());
+        }
+    }
+
+    private void printStuff(Process process) {
+        BufferedReader output = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        int exitCode = process.exitValue();
+        System.out.println("Command is " + process.toString());
+        System.out.println("Exit value is " + exitCode);
+        String line = "";
+        try {
+            do {
+                line = output.readLine();
+                System.out.println(line);
+            } while (line != null);
+        } catch (IOException exception) {
+            System.out.println("Problem printing stderr: " + exception.getMessage());
+        }
+        output = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        try {
+            do {
+                line = output.readLine();
+                System.out.println(line);
+            } while (line != null);
+        } catch (IOException exception) {
+            System.out.println("Problem printing stdout: " + exception.getMessage());
         }
     }
 
