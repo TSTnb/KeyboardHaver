@@ -19,7 +19,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
     final Runtime runtime;
-    Process inputRelayProcess;
     Process inputProcess;
     OutputStream thingToSendTo;
     OutputStreamWriter thingToSendWith;
@@ -46,7 +45,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             isPressed.put(button.getKeyCode(), false);
         });
 
-        StartInputRelay();
         StartInputSendingProcess();
     }
 
@@ -58,6 +56,15 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         final String sendEvent = "sendevent " + device;
         return "" +
                 sendEvent + " 1 330 0" + ";\n" +
+                sendEvent + " 0 0 0" + ";\n";
+    }
+
+    protected String BuildInput(final PrimeTimeButton button, final String device) {
+        final String sendEvent = "sendevent " + device;
+        return "" +
+                sendEvent + " 3 53 " + (button.getXPosition() + RandomInt(-10, 10)) + ";\n" +
+                sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
+                sendEvent + " 1 330 1" + ";\n" +
                 sendEvent + " 0 0 0" + ";\n";
     }
 
@@ -120,21 +127,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
                 "done <$fifo;";
     }
 
-    protected void StartInputRelay() {
-        String[] command = new String[]{"adb", "shell", "su"};
-        try {
-            inputRelayProcess = runtime.exec(command);
-            OutputStreamWriter stdinWriter = new OutputStreamWriter(inputRelayProcess.getOutputStream());
-            stdinWriter.write(BuildWriteInputFilesCommand());
-            stdinWriter.write(RelayCommand());
-            stdinWriter.flush();
-        } catch (IOException ioException) {
-            System.out.println("Unable to start input relay process: " + ioException.getMessage());
-        }
-    }
-
     protected void StartInputSendingProcess() {
-        String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "'cat > /data/fifo/fifo'"};
+        String[] pipeCommand = new String[]{"adb", "shell", "su"};
         try {
             inputProcess = runtime.exec(pipeCommand);
             thingToSendTo = inputProcess.getOutputStream();
@@ -155,20 +149,21 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
         isPressed.replace(keyCode, true);
         try {
-            thingToSendWith.write(keyFileMap.get(keyCode).getName() + "\n");
+            PrimeTimeButton button = keyFileMap.get(keyCode);
+            thingToSendWith.write(BuildInputFile(button, GetDevice()));
             thingToSendWith.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
-            printStuff(inputRelayProcess);
             System.out.println("Problem sending input: " + ioException.getMessage());
         }
     }
 
     public void keyReleased(KeyEvent event) {
-        isPressed.replace(event.getKeyCode(), false);
+        int keyCode = event.getKeyCode();
+        isPressed.replace(keyCode, false);
         typingArea.setText("");
         try {
-            thingToSendWith.write("up\n");
+            thingToSendWith.write(BuildUpInputFile(GetDevice()));
             /*isPressed.forEach((keyCode, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
@@ -181,7 +176,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             thingToSendWith.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
-            printStuff(inputRelayProcess);
             System.out.println("Problem releasing key: " + ioException.getMessage());
         }
     }
