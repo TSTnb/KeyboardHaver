@@ -66,65 +66,11 @@ public class KeyboardHaver extends JFrame implements KeyListener {
                 sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
                 sendEvent + " 1 330 1" + ";\n" +
                 sendEvent + " 0 0 0" + ";\n";
-    }
 
-    protected String BuildInputFile(final PrimeTimeButton button, final String device) {
-        final String sendEvent = "sendevent " + device;
-        return "" +
-                sendEvent + " 3 53 " + (button.getXPosition() + RandomInt(-10, 10)) + ";\n" +
-                sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
-                sendEvent + " 1 330 1" + ";\n" +
-                sendEvent + " 0 0 0" + ";\n";
     }
 
     protected String GetDevice() {
         return "/dev/input/event4";
-    }
-
-    protected String BuildWriteInputFile(final String inputFileContents, final String name) {
-        final String inputFile = INPUT_DIR + "/" + name;
-        String inputCat = "<<INPUT_FILE cat > " + inputFile + ";\n";
-        return "" +
-                inputCat +
-                inputFileContents +
-                "INPUT_FILE\n" +
-                "chmod +x " + inputFile + "\n";
-    }
-
-    protected String BuildWriteInputFilesCommand() {
-        final String device = GetDevice();
-        final StringBuilder commandBuilder = new StringBuilder();
-
-        commandBuilder.append("input_dir=" + INPUT_DIR + ";\n");
-        commandBuilder.append("if [[ ! -d $input_dir ]]; then" + "\n");
-        commandBuilder.append("  rm -rf $input_dir;" + "\n");
-        commandBuilder.append("  mkdir -p $input_dir;" + "\n");
-        commandBuilder.append("fi;" + "\n");
-        commandBuilder.append("cd $input_dir;" + "\n");
-
-        keyFileMap.forEach((keyCode, button) -> commandBuilder.append(BuildWriteInputFile(BuildInputFile(button, device), button.getName())));
-        commandBuilder.append(BuildWriteInputFile(BuildUpInputFile(device), "up"));
-        return commandBuilder.toString();
-    }
-
-    protected String RelayCommand() {
-        return "" +
-                "fifo_dir=" + FIFO_DIR + ";" + "\n" +
-                "if [[ ! -d $fifo_dir ]]; then" + "\n" +
-                "  rm -rf $fifo_dir;" + "\n" +
-                "  mkdir -p $fifo_dir;" + "\n" +
-                "fi;" + "\n" +
-                "cd $fifo_dir;" + "\n" +
-                "fifo=fifo;" + "\n" +
-                "if [[ ! -p $fifo ]]; then" + "\n" +
-                "  rm -rf $fifo;" + "\n" +
-                "  mkfifo $fifo;" + "\n" +
-                "fi;" + "\n" +
-                "while true; do" + "\n" +
-                "  while IFS= read -r command; do" + "\n" +
-                "    inputs/${command};" + "\n" +
-                "  done;" + "\n" +
-                "done <$fifo;";
     }
 
     protected void StartInputSendingProcess() {
