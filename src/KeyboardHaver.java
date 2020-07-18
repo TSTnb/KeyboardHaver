@@ -19,12 +19,15 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
     final Runtime runtime;
+    boolean somethingIsHeld;
+    int keypressIndex = 0;
     Process inputProcess;
     OutputStream thingToSendTo;
     OutputStreamWriter thingToSendWith;
 
     public KeyboardHaver(final String name) {
         super(name);
+        somethingIsHeld = false;
         runtime = Runtime.getRuntime();
 
         Set<PrimeTimeButton> buttons = new HashSet<>();
@@ -52,21 +55,33 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         return min + (int) (Math.random() * (max - min) + 1);
     }
 
-    protected String BuildUpInputFile(final String device) {
+    protected String BuildUpInputFile(final String device, boolean wasHeld) {
         final String sendEvent = "sendevent " + device;
-        return "" +
-                sendEvent + " 1 330 0" + ";\n" +
-                sendEvent + " 0 0 0" + ";\n";
+        final StringBuilder upInput = new StringBuilder();
+
+        //upInput = new StringBuilder(sendEvent + " 3 57 " + 0xffffffff + ";\n");
+        //if (!somethingIsHeld) {
+        upInput.append(sendEvent).append(" 1 330 0").append(";\n");
+        //}
+        upInput.append(sendEvent).append(" 0 0 0").append(";\n");
+        /*upInput.append(sendEvent).append(" 3 47 0").append(";\n");
+        upInput.append(sendEvent).append(" 0 0 0").append(";\n");*/
+        return upInput.toString();
     }
 
     protected String BuildInput(final PrimeTimeButton button, final String device) {
         final String sendEvent = "sendevent " + device;
-        return "" +
-                sendEvent + " 3 53 " + (button.getXPosition() + RandomInt(-10, 10)) + ";\n" +
-                sendEvent + " 3 54 " + (button.getYPosition() + RandomInt(-10, 10)) + ";\n" +
-                sendEvent + " 1 330 1" + ";\n" +
-                sendEvent + " 0 0 0" + ";\n";
+        final StringBuilder input = new StringBuilder();
+        /*input.append(sendEvent).append(" 3 47 1").append(";\n");
+        input.append(sendEvent).append(" 3 57 ").append(keypressIndex++).append(";\n");*/
+        //if (!somethingIsHeld) {
+        input.append(sendEvent).append(" 1 330 1").append(";\n");
+        //}
+        input.append(sendEvent).append(" 3 53 ").append(button.getXPosition() + RandomInt(-10, 10)).append(";\n");
+        input.append(sendEvent).append(" 3 54 ").append(button.getYPosition() + RandomInt(-10, 10)).append(";\n");
+        input.append(sendEvent).append(" 0 0 0").append(";\n");
 
+        return input.toString();
     }
 
     protected String GetDevice() {
@@ -95,8 +110,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
         isPressed.replace(keyCode, true);
         try {
-            PrimeTimeButton button = keyFileMap.get(keyCode);
-            thingToSendWith.write(BuildInputFile(button, GetDevice()));
+            thingToSendWith.write(BuildInput(keyFileMap.get(keyCode), GetDevice()));
             thingToSendWith.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
@@ -105,21 +119,23 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
     public void keyReleased(KeyEvent event) {
-        int keyCode = event.getKeyCode();
-        isPressed.replace(keyCode, false);
+        isPressed.replace(event.getKeyCode(), false);
+        boolean wasHeld = somethingIsHeld;
+        somethingIsHeld = isPressed.containsValue(true);
         typingArea.setText("");
         try {
-            thingToSendWith.write(BuildUpInputFile(GetDevice()));
+            thingToSendWith.write(BuildUpInputFile(GetDevice(), wasHeld));
+            thingToSendWith.flush();
             /*isPressed.forEach((keyCode, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
-                        thingToSendWith.write(keyFileMap.get(keyCode).getName() + "\n");
+                        thingToSendWith.write(BuildInput(keyFileMap.get(keyCode), GetDevice()));
+                        thingToSendWith.flush();
                     } catch (IOException ioException) {
                         System.out.println("problem sending thing: " + ioException.getMessage());
                     }
                 }
             });*/
-            thingToSendWith.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
             System.out.println("Problem releasing key: " + ioException.getMessage());
