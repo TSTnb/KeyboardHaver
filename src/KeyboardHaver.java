@@ -60,24 +60,24 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         final String sendEvent = "sendevent " + device;
         final StringBuilder upInput = new StringBuilder();
 
-        //upInput = new StringBuilder(sendEvent + " 3 57 " + 0xffffffff + ";\n");
-        //if (!somethingIsHeld) {
-        upInput.append(sendEvent).append(" 1 330 0").append(";\n");
-        //}
+        upInput.append(sendEvent).append(" 3 57 ").append(0xffffffff).append(";\n");
+        if (!somethingIsHeld) {
+            upInput.append(sendEvent).append(" 1 330 0").append(";\n");
+        }
         upInput.append(sendEvent).append(" 0 0 0").append(";\n");
-        /*upInput.append(sendEvent).append(" 3 47 0").append(";\n");
-        upInput.append(sendEvent).append(" 0 0 0").append(";\n");*/
+        upInput.append(sendEvent).append(" 3 47 0").append(";\n");
+        upInput.append(sendEvent).append(" 0 0 0").append(";\n");
         return upInput.toString();
     }
 
     protected String BuildInput(final PrimeTimeButton button, final String device) {
         final String sendEvent = "sendevent " + device;
         final StringBuilder input = new StringBuilder();
-        /*input.append(sendEvent).append(" 3 47 1").append(";\n");
-        input.append(sendEvent).append(" 3 57 ").append(keypressIndex++).append(";\n");*/
-        //if (!somethingIsHeld) {
-        input.append(sendEvent).append(" 1 330 1").append(";\n");
-        //}
+        input.append(sendEvent).append(" 3 47 1").append(";\n");
+        input.append(sendEvent).append(" 3 57 ").append(keypressIndex++).append(";\n");
+        if (!somethingIsHeld) {
+            input.append(sendEvent).append(" 1 330 1").append(";\n");
+        }
         input.append(sendEvent).append(" 3 53 ").append(button.getXPosition() + RandomInt(-10, 10)).append(";\n");
         input.append(sendEvent).append(" 3 54 ").append(button.getYPosition() + RandomInt(-10, 10)).append(";\n");
         input.append(sendEvent).append(" 0 0 0").append(";\n");
