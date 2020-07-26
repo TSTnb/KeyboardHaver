@@ -19,6 +19,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
     final Runtime runtime;
+    final String device = "/dev/input/event4";
     boolean somethingIsHeld;
     int keypressIndex = 0;
     Process inputProcess;
@@ -52,45 +53,68 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         StartInputSendingProcess();
     }
 
-    protected int RandomInt(int min, int max) {
-        return min + (int) (Math.random() * (max - min) + 1);
-    }
-
-    protected String BuildUpInputFile(final String device, boolean wasHeld) {
-        final String sendEvent = "sendevent " + device;
-        final StringBuilder upInput = new StringBuilder();
-
-        upInput.append(sendEvent).append(" 3 57 ").append(0xffffffff).append(";\n");
-        if (!somethingIsHeld) {
-            upInput.append(sendEvent).append(" 1 330 0").append(";\n");
+    protected void addEvent(OutputStream stream, int type, int code, int value) {
+        byte[] bytes = {
+                (byte) 0xd7,
+                (byte) 0xb6,
+                (byte) 0x1b,
+                (byte) 0x5f,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x83,
+                (byte) 0xff,
+                (byte) 0x0c,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) 0x00,
+                (byte) (type & 0xff),
+                (byte) ((type >> 8) & 0xff),
+                (byte) (code & 0xff),
+                (byte) ((code >> 8) & 0xff),
+                (byte) (value & 0xff),
+                (byte) ((value >> 8) & 0xff),
+                (byte) ((value >> 16) & 0xff),
+                (byte) ((value >> 24) & 0xff),
+        };
+        try {
+            stream.write(bytes);
+        } catch (IOException ioException) {
+            System.out.println("could not write bytes: " + ioException.getMessage());
         }
-        upInput.append(sendEvent).append(" 0 0 0").append(";\n");
-        upInput.append(sendEvent).append(" 3 47 0").append(";\n");
-        upInput.append(sendEvent).append(" 0 0 0").append(";\n");
-        return upInput.toString();
     }
 
-    protected String BuildInput(final PrimeTimeButton button, final String device) {
+    protected void WriteUpInputFile(boolean wasHeld, OutputStream stream) throws IOException {
+        addEvent(stream, 3, 57, 0xffffffff);
+        if (!somethingIsHeld) {
+            addEvent(stream, 1, 330, 0);
+        }
+        addEvent(stream, 0, 0, 0);
+        addEvent(stream, 3, 47, 0);
+        addEvent(stream, 0, 0, 0);
+        stream.flush();
+    }
+
+
+    protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
         final String sendEvent = "sendevent " + device;
         final StringBuilder input = new StringBuilder();
-        input.append(sendEvent).append(" 3 47 1").append(";\n");
-        input.append(sendEvent).append(" 3 57 ").append(keypressIndex++).append(";\n");
+        addEvent(stream, 3, 47, 1);
+        addEvent(stream, 3, 57, keypressIndex++);
         if (!somethingIsHeld) {
-            input.append(sendEvent).append(" 1 330 1").append(";\n");
+            addEvent(stream, 1, 330, 1);
         }
-        input.append(sendEvent).append(" 3 53 ").append(button.getXPosition() + RandomInt(-10, 10)).append(";\n");
-        input.append(sendEvent).append(" 3 54 ").append(button.getYPosition() + RandomInt(-10, 10)).append(";\n");
-        input.append(sendEvent).append(" 0 0 0").append(";\n");
-
-        return input.toString();
-    }
-
-    protected String GetDevice() {
-        return "/dev/input/event4";
+        addEvent(stream, 3, 53, button.getXPosition());
+        addEvent(stream, 3, 54, button.getYPosition());
+        addEvent(stream, 0, 0, 0);
+        stream.flush();
     }
 
     protected void StartInputSendingProcess() {
-        String[] pipeCommand = new String[]{"adb", "shell", "su"};
+        String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "'tee " + device + " >/dev/null'"};
         try {
             inputProcess = runtime.exec(pipeCommand);
             thingToSendTo = inputProcess.getOutputStream();
@@ -111,8 +135,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
         isPressed.replace(keyCode, true);
         try {
-            thingToSendWith.write(BuildInput(keyFileMap.get(keyCode), GetDevice()));
-            thingToSendWith.flush();
+            WriteInput(keyFileMap.get(keyCode), thingToSendTo);
         } catch (IOException ioException) {
             printStuff(inputProcess);
             System.out.println("Problem sending input: " + ioException.getMessage());
@@ -125,12 +148,11 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         somethingIsHeld = isPressed.containsValue(true);
         typingArea.setText("");
         try {
-            thingToSendWith.write(BuildUpInputFile(GetDevice(), wasHeld));
-            thingToSendWith.flush();
+            WriteUpInputFile(wasHeld, thingToSendTo);
             /*isPressed.forEach((keyCode, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
-                        thingToSendWith.write(BuildInput(keyFileMap.get(keyCode), GetDevice()));
+                        thingToSendWith.write(BuildInput(keyFileMap.get(keyCode)));
                         thingToSendWith.flush();
                     } catch (IOException ioException) {
                         System.out.println("problem sending thing: " + ioException.getMessage());
@@ -209,11 +231,15 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
 
         public int getXPosition() {
-            return xPosition;
+            return xPosition + RandomInt(-10, 10);
         }
 
         public int getYPosition() {
-            return yPosition;
+            return yPosition + RandomInt(-10, 10);
+        }
+
+        protected int RandomInt(int min, int max) {
+            return min + (int) (Math.random() * (max - min) + 1);
         }
     }
 }
