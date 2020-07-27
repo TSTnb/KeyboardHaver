@@ -98,7 +98,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
-        final StringBuilder input = new StringBuilder();
         addEvent(stream, 3, 47, 1);
         addEvent(stream, 3, 57, keypressIndex++);
         if (!somethingIsHeld) {
