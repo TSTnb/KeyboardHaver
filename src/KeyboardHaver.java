@@ -6,15 +6,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class KeyboardHaver extends JFrame implements KeyListener {
-    private final static String FIFO_DIR = "/data/fifo";
-    private final static String INPUT_DIR = FIFO_DIR + "/inputs";
     JTextField typingArea;
     final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
@@ -28,7 +25,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int EV_KEY = 1;
     private final int EV_SYN = 0;
     private final int ABS_MT_SLOT = 47;
-    private final int ABS_MT_WIDTH_MAJOR = 50;
     private final int ABS_MT_TRACKING_ID = 57;
     private final int ABS_MT_POSITION_X = 53;
     private final int ABS_MT_POSITION_Y = 54;
@@ -36,8 +32,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int BTN_TOUCH = 330;
     private final int DOWN = 1;
     private final int UP = 0;
-
-    private int[] slots;
 
     public KeyboardHaver(final String name) {
         super(name);
@@ -101,7 +95,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
     }
 
-    protected void WriteUpInputFile(final PrimeTimeButton button, boolean wasHeld, OutputStream stream) throws IOException {
+    protected void WriteUpInputFile(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
         if (!somethingIsHeld) {
@@ -111,7 +105,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
 
-    protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
+    protected void WriteInput(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex++);
         if (!somethingIsHeld) {
@@ -154,20 +148,10 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     public void keyReleased(KeyEvent event) {
         int keyCode = event.getKeyCode();
         isPressed.replace(keyCode, false);
-        boolean wasHeld = somethingIsHeld;
         somethingIsHeld = isPressed.containsValue(true);
         typingArea.setText("");
         try {
-            WriteUpInputFile(keyFileMap.get(keyCode), wasHeld, thingToSendTo);
-            /*isPressed.forEach((k, wellIsIt) -> {
-                if (wellIsIt) {
-                    try {
-                        WriteInput(keyFileMap.get(k), thingToSendTo);
-                    } catch (IOException ioException) {
-                        System.out.println("problem sending thing: " + ioException.getMessage());
-                    }
-                }
-            });*/
+            WriteUpInputFile(keyFileMap.get(keyCode), thingToSendTo);
             thingToSendTo.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
@@ -232,10 +216,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             this.xPosition = xPosition;
             this.yPosition = yPosition;
             this.slot = slot;
-        }
-
-        public String getName() {
-            return name;
         }
 
         public int getSlot() {
