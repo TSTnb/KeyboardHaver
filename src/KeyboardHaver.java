@@ -37,6 +37,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int DOWN = 1;
     private final int UP = 0;
 
+    private int[] slots;
+
     public KeyboardHaver(final String name) {
         super(name);
         somethingIsHeld = false;
@@ -44,15 +46,16 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
         final int width = 1080;
         Set<PrimeTimeButton> buttons = new HashSet<>();
-        buttons.add(new PrimeTimeButton("hard-drop", 32, width - 257, 2031));
+        int slotIndex = 0;
+        buttons.add(new PrimeTimeButton("hard-drop", 32, width - 257, 2031, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("right", 74, width - 373, 2146));
-        buttons.add(new PrimeTimeButton("down", 75, width - 256, 2260));
-        buttons.add(new PrimeTimeButton("left", 76, width - 137, 2145));
+        buttons.add(new PrimeTimeButton("right", 74, width - 373, 2146, ++slotIndex));
+        buttons.add(new PrimeTimeButton("down", 75, width - 256, 2260, ++slotIndex));
+        buttons.add(new PrimeTimeButton("left", 76, width - 137, 2145, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("ccw", 68, width - 750, 2155));
-        buttons.add(new PrimeTimeButton("cw", 83, width - 948, 2040));
-        buttons.add(new PrimeTimeButton("hold", 70, width - 949, 1827));
+        buttons.add(new PrimeTimeButton("ccw", 68, width - 750, 2155, ++slotIndex));
+        buttons.add(new PrimeTimeButton("cw", 83, width - 948, 2040, ++slotIndex));
+        buttons.add(new PrimeTimeButton("hold", 70, width - 949, 1827, ++slotIndex));
 
         keyFileMap = new HashMap<>();
         isPressed = new HashMap<>();
@@ -98,19 +101,18 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
     }
 
-    protected void WriteUpInputFile(boolean wasHeld, OutputStream stream) throws IOException {
+    protected void WriteUpInputFile(final PrimeTimeButton button, boolean wasHeld, OutputStream stream) throws IOException {
+        addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
         if (!somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, UP);
         }
         addEvent(stream, EV_SYN, SYN_REPORT, 0);
-        addEvent(stream, EV_ABS, ABS_MT_SLOT, 0);
-        addEvent(stream, EV_SYN, SYN_REPORT, 0);
     }
 
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
-        addEvent(stream, EV_ABS, ABS_MT_SLOT, 1);
+        addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex++);
         if (!somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
@@ -150,21 +152,22 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
     public void keyReleased(KeyEvent event) {
-        isPressed.replace(event.getKeyCode(), false);
+        int keyCode = event.getKeyCode();
+        isPressed.replace(keyCode, false);
         boolean wasHeld = somethingIsHeld;
         somethingIsHeld = isPressed.containsValue(true);
         typingArea.setText("");
         try {
-            WriteUpInputFile(wasHeld, thingToSendTo);
-            isPressed.forEach((keyCode, wellIsIt) -> {
+            WriteUpInputFile(keyFileMap.get(keyCode), wasHeld, thingToSendTo);
+            /*isPressed.forEach((k, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
-                        WriteInput(keyFileMap.get(keyCode), thingToSendTo);
+                        WriteInput(keyFileMap.get(k), thingToSendTo);
                     } catch (IOException ioException) {
                         System.out.println("problem sending thing: " + ioException.getMessage());
                     }
                 }
-            });
+            });*/
             thingToSendTo.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
@@ -221,16 +224,22 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         final int keyCode;
         final int xPosition;
         final int yPosition;
+        final int slot;
 
-        public PrimeTimeButton(String name, int keyCode, int xPosition, int yPosition) {
+        public PrimeTimeButton(final String name, final int keyCode, final int xPosition, final int yPosition, final int slot) {
             this.name = name;
             this.keyCode = keyCode;
             this.xPosition = xPosition;
             this.yPosition = yPosition;
+            this.slot = slot;
         }
 
         public String getName() {
             return name;
+        }
+
+        public int getSlot() {
+            return slot;
         }
 
         public int getKeyCode() {
