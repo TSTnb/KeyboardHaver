@@ -24,7 +24,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     int keypressIndex = 0;
     Process inputProcess;
     OutputStream thingToSendTo;
-    OutputStreamWriter thingToSendWith;
 
     public KeyboardHaver(final String name) {
         super(name);
@@ -95,12 +94,10 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         addEvent(stream, 0, 0, 0);
         addEvent(stream, 3, 47, 0);
         addEvent(stream, 0, 0, 0);
-        stream.flush();
     }
 
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
-        final String sendEvent = "sendevent " + device;
         final StringBuilder input = new StringBuilder();
         addEvent(stream, 3, 47, 1);
         addEvent(stream, 3, 57, keypressIndex++);
@@ -110,7 +107,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         addEvent(stream, 3, 53, button.getXPosition());
         addEvent(stream, 3, 54, button.getYPosition());
         addEvent(stream, 0, 0, 0);
-        stream.flush();
     }
 
     protected void StartInputSendingProcess() {
@@ -118,7 +114,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         try {
             inputProcess = runtime.exec(pipeCommand);
             thingToSendTo = inputProcess.getOutputStream();
-            thingToSendWith = new OutputStreamWriter(thingToSendTo);
         } catch (IOException ioException) {
             System.out.println("Unable to start input-sending process: " + ioException.getMessage());
             System.exit(1);
@@ -136,6 +131,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         isPressed.replace(keyCode, true);
         try {
             WriteInput(keyFileMap.get(keyCode), thingToSendTo);
+            thingToSendTo.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
             System.out.println("Problem sending input: " + ioException.getMessage());
@@ -149,16 +145,16 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         typingArea.setText("");
         try {
             WriteUpInputFile(wasHeld, thingToSendTo);
-            /*isPressed.forEach((keyCode, wellIsIt) -> {
+            isPressed.forEach((keyCode, wellIsIt) -> {
                 if (wellIsIt) {
                     try {
-                        thingToSendWith.write(BuildInput(keyFileMap.get(keyCode)));
-                        thingToSendWith.flush();
+                        WriteInput(keyFileMap.get(keyCode), thingToSendTo);
                     } catch (IOException ioException) {
                         System.out.println("problem sending thing: " + ioException.getMessage());
                     }
                 }
-            });*/
+            });
+            thingToSendTo.flush();
         } catch (IOException ioException) {
             printStuff(inputProcess);
             System.out.println("Problem releasing key: " + ioException.getMessage());
