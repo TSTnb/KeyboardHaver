@@ -24,6 +24,18 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     int keypressIndex = 0;
     Process inputProcess;
     OutputStream thingToSendTo;
+    private final int EV_ABS = 3;
+    private final int EV_KEY = 1;
+    private final int EV_SYN = 0;
+    private final int ABS_MT_SLOT = 47;
+    private final int ABS_MT_WIDTH_MAJOR = 50;
+    private final int ABS_MT_TRACKING_ID = 57;
+    private final int ABS_MT_POSITION_X = 53;
+    private final int ABS_MT_POSITION_Y = 54;
+    private final int SYN_REPORT = 0;
+    private final int BTN_TOUCH = 330;
+    private final int DOWN = 1;
+    private final int UP = 0;
 
     public KeyboardHaver(final String name) {
         super(name);
@@ -87,25 +99,25 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
     protected void WriteUpInputFile(boolean wasHeld, OutputStream stream) throws IOException {
-        addEvent(stream, 3, 57, 0xffffffff);
+        addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
         if (!somethingIsHeld) {
-            addEvent(stream, 1, 330, 0);
+            addEvent(stream, EV_KEY, BTN_TOUCH, UP);
         }
-        addEvent(stream, 0, 0, 0);
-        addEvent(stream, 3, 47, 0);
-        addEvent(stream, 0, 0, 0);
+        addEvent(stream, EV_SYN, SYN_REPORT, 0);
+        addEvent(stream, EV_ABS, ABS_MT_SLOT, 0);
+        addEvent(stream, EV_SYN, SYN_REPORT, 0);
     }
 
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
-        addEvent(stream, 3, 47, 1);
-        addEvent(stream, 3, 57, keypressIndex++);
+        addEvent(stream, EV_ABS, ABS_MT_SLOT, 1);
+        addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex++);
         if (!somethingIsHeld) {
-            addEvent(stream, 1, 330, 1);
+            addEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
         }
-        addEvent(stream, 3, 53, button.getXPosition());
-        addEvent(stream, 3, 54, button.getYPosition());
-        addEvent(stream, 0, 0, 0);
+        addEvent(stream, EV_ABS, ABS_MT_POSITION_X, button.getXPosition());
+        addEvent(stream, EV_ABS, ABS_MT_POSITION_Y, button.getYPosition());
+        addEvent(stream, EV_SYN, SYN_REPORT, 0);
     }
 
     protected void StartInputSendingProcess() {
