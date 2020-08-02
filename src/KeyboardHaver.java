@@ -33,6 +33,24 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int BTN_TOUCH = 330;
     private final int DOWN = 1;
     private final int UP = 0;
+    byte[] eventBytes = {
+            (byte) 0xd7,
+            (byte) 0xb6,
+            (byte) 0x1b,
+            (byte) 0x5f,
+            (byte) 0x00,
+            (byte) 0x00,
+            (byte) 0x00,
+            (byte) 0x00,
+            (byte) 0x83,
+            (byte) 0xff,
+            (byte) 0x0c,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+    };
 
     public KeyboardHaver(final String name) {
         super(name);
@@ -120,23 +138,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
     protected void addEvent(OutputStream stream, int type, int code, int value) {
-        byte[] bytes = {
-                (byte) 0xd7,
-                (byte) 0xb6,
-                (byte) 0x1b,
-                (byte) 0x5f,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x83,
-                (byte) 0xff,
-                (byte) 0x0c,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x00,
-                (byte) 0x00,
+        byte[] inputBytes = {
                 (byte) (type & 0xff),
                 (byte) ((type >> 8) & 0xff),
                 (byte) (code & 0xff),
@@ -147,7 +149,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
                 (byte) ((value >> 24) & 0xff),
         };
         try {
-            stream.write(bytes);
+            stream.write(eventBytes);
+            stream.write(inputBytes);
         } catch (IOException ioException) {
             System.out.println("could not write bytes: " + ioException.getMessage());
         }
