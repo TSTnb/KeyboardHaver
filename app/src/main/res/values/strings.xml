@@ -17,4 +17,6 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="accessibility_service_description">Enable KeyboardHaver to have a keyboard.</string>
+<string name="accessibility_service_summary">Makes you have a keyboard</string>
 </resources>
