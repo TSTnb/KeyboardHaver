@@ -25,12 +25,12 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int EV_ABS = 3;
     private final int EV_KEY = 1;
     private final int EV_SYN = 0;
-    private final int ABS_MT_SLOT = 47;
-    private final int ABS_MT_TRACKING_ID = 57;
-    private final int ABS_MT_POSITION_X = 53;
-    private final int ABS_MT_POSITION_Y = 54;
+    private final int ABS_MT_SLOT = 0x2f;
+    private final int ABS_MT_TRACKING_ID = 0x39;
+    private final int ABS_MT_POSITION_X = 0x35;
+    private final int ABS_MT_POSITION_Y = 0x36;
     private final int SYN_REPORT = 0;
-    private final int BTN_TOUCH = 330;
+    private final int BTN_TOUCH = 0x14a;
     private final int DOWN = 1;
     private final int UP = 0;
     byte[] eventBytes;
