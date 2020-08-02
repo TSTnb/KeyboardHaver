@@ -21,6 +21,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
     Map<Integer, Boolean> isPressed;
     Runtime runtime;
     String device;
+    boolean sendTouch = true;
     boolean somethingIsHeld;
     int keypressIndex = 0;
     Process inputProcess;
@@ -151,7 +152,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_PRESSURE, 0x00);
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
-        if (!somethingIsHeld) {
+        if (sendTouch && !somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, UP);
         }
         addEvent(stream, EV_SYN, SYN_REPORT, 0);
@@ -173,7 +174,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex);
         addEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
         addEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
-        if (!somethingIsHeld) {
+        if (sendTouch && !somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
         }
         addEvent(stream, EV_ABS, ABS_MT_POSITION_X, button.getXPosition());
