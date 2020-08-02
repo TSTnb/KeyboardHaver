@@ -27,6 +27,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int EV_SYN = 0;
     private final int ABS_MT_SLOT = 0x2f;
     private final int ABS_MT_TRACKING_ID = 0x39;
+    private final int ABS_MT_TOUCH_MAJOR = 0x86;
+    private final int ABS_MT_PRESSURE = 0x3a;
     private final int ABS_MT_POSITION_X = 0x35;
     private final int ABS_MT_POSITION_Y = 0x36;
     private final int SYN_REPORT = 0;
@@ -141,6 +143,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
     protected void WriteUpInputFile(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
+        addEvent(stream, EV_ABS, ABS_MT_PRESSURE, 0x00);
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
         if (!somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, UP);
@@ -150,7 +153,9 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
-        addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex++);
+        addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex);
+        addEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
+        addEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
         if (!somethingIsHeld) {
             addEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
         }
