@@ -65,7 +65,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         if (device.equals("NO_DEVICE")) {
             System.out.println("Unable to get device");
         }
-        eventBytes = getEventBytes();
+        eventBytes = new byte[16];
 
         StartInputSendingProcess();
     }
@@ -122,50 +122,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         return result.toString();
     }
 
-    protected byte[] getEventBytes() {
-        try {
-            Process deviceProcess = runtime.exec(new String[]{"adb", "shell"});
-            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
-            stdin.write("cat /dev/input/event4 &"
-                    + "sendevent " + device + " 1 330 1;"
-                    + "sendevent " + device + " 0 0 0;"
-                    + "sendevent " + device + " 1 330 0;"
-                    + "sendevent " + device + " 0 0 0;"
-                    + "kill -9 %;"
-                    + "exit;"
-                    + "\n"
-            );
-            stdin.flush();
-            return getEventPrefix(deviceProcess);
-        } catch (IOException ioException) {
-            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
-            return null;
-        }
-    }
-
-    protected byte[] getEventPrefix(Process process) {
-        try {
-            process.waitFor();
-        } catch (InterruptedException interruptedException) {
-            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
-            return null;
-        }
-
-        InputStream processOutput = process.getInputStream();
-        byte[] bytes = new byte[16];
-        int bytesRead;
-        try {
-            bytesRead = processOutput.read(bytes, 0, 16);
-            if (bytesRead != 16) {
-                System.out.println("Unable to get all bytes");
-            }
-            return bytes;
-        } catch (IOException exception) {
-            System.out.println("Problem printing stdout of process: " + exception.getMessage());
-        }
-        return null;
-    }
-
     protected void addEvent(OutputStream stream, int type, int code, int value) {
         byte[] inputBytes = {
                 (byte) (type & 0xff),
@@ -193,7 +149,6 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         }
         addEvent(stream, EV_SYN, SYN_REPORT, 0);
     }
-
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
