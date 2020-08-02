@@ -75,16 +75,15 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
             Process deviceProcess = runtime.exec(new String[]{"su"});
             OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
             stdin.write("search_string=ABS_MT_POSITION_X;"
-                    + "for device in /dev/input/*; do"
+                    + "picked_device=NO_DEVICE;"
+                    + "for index in $(ls /dev/input/event* | awk -F'/dev/input/event' '{print $2}' | sort -g); do"
+                    + "  device=/dev/input/event$index;"
                     + "  if getevent -lp $device | grep -q $search_string; then"
+                    + "    picked_device=$device;"
                     + "    break;"
                     + "  fi;"
                     + "done;"
-                    + "if getevent -lp $device | grep -q $search_string; then"
-                    + "  echo $device;"
-                    + "else"
-                    + "  echo NO_DEVICE;"
-                    + "fi;"
+                    + "echo $picked_device;"
                     + "exit;\n"
             );
             stdin.flush();
