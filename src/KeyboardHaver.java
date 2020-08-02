@@ -4,6 +4,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -33,24 +34,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int BTN_TOUCH = 330;
     private final int DOWN = 1;
     private final int UP = 0;
-    byte[] eventBytes = {
-            (byte) 0xd7,
-            (byte) 0xb6,
-            (byte) 0x1b,
-            (byte) 0x5f,
-            (byte) 0x00,
-            (byte) 0x00,
-            (byte) 0x00,
-            (byte) 0x00,
-            (byte) 0x83,
-            (byte) 0xff,
-            (byte) 0x0c,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-    };
+    byte[] eventBytes;
 
     public KeyboardHaver(final String name) {
         super(name);
@@ -81,6 +65,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         if (device.equals("NO_DEVICE")) {
             System.out.println("Unable to get device");
         }
+        eventBytes = getEventBytes();
 
         StartInputSendingProcess();
     }
@@ -135,6 +120,50 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             printStuff(process);
         }
         return result.toString();
+    }
+
+    protected byte[] getEventBytes() {
+        try {
+            Process deviceProcess = runtime.exec(new String[]{"adb", "shell"});
+            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
+            stdin.write("cat /dev/input/event4 &"
+                    + "sendevent " + device + " 1 330 1;"
+                    + "sendevent " + device + " 0 0 0;"
+                    + "sendevent " + device + " 1 330 0;"
+                    + "sendevent " + device + " 0 0 0;"
+                    + "kill -9 %;"
+                    + "exit;"
+                    + "\n"
+            );
+            stdin.flush();
+            return getEventPrefix(deviceProcess);
+        } catch (IOException ioException) {
+            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
+            return null;
+        }
+    }
+
+    protected byte[] getEventPrefix(Process process) {
+        try {
+            process.waitFor();
+        } catch (InterruptedException interruptedException) {
+            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
+            return null;
+        }
+
+        InputStream processOutput = process.getInputStream();
+        byte[] bytes = new byte[16];
+        int bytesRead;
+        try {
+            bytesRead = processOutput.read(bytes, 0, 16);
+            if (bytesRead != 16) {
+                System.out.println("Unable to get all bytes");
+            }
+            return bytes;
+        } catch (IOException exception) {
+            System.out.println("Problem printing stdout of process: " + exception.getMessage());
+        }
+        return null;
     }
 
     protected void addEvent(OutputStream stream, int type, int code, int value) {
