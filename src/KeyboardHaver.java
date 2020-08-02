@@ -181,6 +181,9 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
     public void keyPressed(KeyEvent event) {
         int keyCode = event.getKeyCode();
+        if (!isPressed.containsKey(keyCode)) {
+            return;
+        }
         if (isPressed.get(keyCode)) {
             return;
         }
@@ -196,6 +199,9 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
     public void keyReleased(KeyEvent event) {
         int keyCode = event.getKeyCode();
+        if (!isPressed.containsKey(keyCode)) {
+            return;
+        }
         isPressed.replace(keyCode, false);
         somethingIsHeld = isPressed.containsValue(true);
         typingArea.setText("");
