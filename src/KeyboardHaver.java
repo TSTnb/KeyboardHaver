@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -16,7 +17,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     final Map<Integer, PrimeTimeButton> keyFileMap;
     final Map<Integer, Boolean> isPressed;
     final Runtime runtime;
-    final String device = "/dev/input/event4";
+    String device;
     boolean somethingIsHeld;
     int keypressIndex = 0;
     Process inputProcess;
@@ -58,7 +59,64 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             isPressed.put(button.getKeyCode(), false);
         });
 
+        device = getDevice();
+        if (device.equals("NO_DEVICE")) {
+            System.out.println("Unable to get device");
+        }
+
         StartInputSendingProcess();
+    }
+
+    protected String getDevice() {
+        try {
+            Process deviceProcess = runtime.exec(new String[]{"adb", "shell"});
+            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
+            stdin.write("search_string=ABS_MT_POSITION_X;"
+                    + "for device in /dev/input/*; do"
+                    + "  if getevent -lp $device | grep -q $search_string; then"
+                    + "    break;"
+                    + "  fi;"
+                    + "done;"
+                    + "if getevent -lp $device | grep -q $search_string; then"
+                    + "  echo $device;"
+                    + "else"
+                    + "  echo NO_DEVICE;"
+                    + "fi;"
+                    + "exit;\n"
+            );
+            stdin.flush();
+            return getOutputString(deviceProcess);
+        } catch (IOException ioException) {
+            System.out.println("Unable to start the process that detects your touchscreen device: " + ioException.getMessage());
+            return null;
+        }
+    }
+
+    protected String getOutputString(Process process) {
+        try {
+            process.waitFor();
+        } catch (InterruptedException interruptedException) {
+            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
+            return null;
+        }
+
+        BufferedReader processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        StringBuilder result = new StringBuilder();
+        String line;
+        try {
+            do {
+                line = processOutput.readLine();
+                if (line != null) {
+                    result.append(line);
+                }
+            } while (line != null);
+        } catch (IOException exception) {
+            System.out.println("Problem printing stdout of process: " + exception.getMessage());
+        }
+        if (result.length() == 0) {
+            printStuff(process);
+        }
+        return result.toString();
     }
 
     protected void addEvent(OutputStream stream, int type, int code, int value) {
