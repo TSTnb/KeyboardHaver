@@ -69,6 +69,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
 
         device = getDevice();
         eventBytes = new byte[16];
+        sendTouch = supportsBtnTouch();
 
         StartInputSendingProcess();
     }
@@ -127,6 +128,29 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
             printStuff(process);
         }
         return result.toString();
+    }
+
+    protected boolean supportsBtnTouch () {
+        boolean returnValue = true;
+        try {
+            Process deviceProcess = runtime.exec(new String[]{"su"});
+            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
+            stdin.write("getevent -l " + device + " | grep -m1 --line-buffered BTN_TOUCH &"
+                    + "sendevent " + device + " " + EV_KEY + " " + BTN_TOUCH + " " + DOWN + ";"
+                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
+                    + "sendevent " + device + " " + EV_KEY + " " + BTN_TOUCH + " " + UP + ";"
+                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
+                    + "kill -9 %;"
+                    + "exit;"
+                    + "\n"
+            );
+            stdin.flush();
+            String outputString = getOutputString(deviceProcess);
+            returnValue = outputString.matches(".* BTN_TOUCH .*");
+        } catch (IOException ioException) {
+            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
+        }
+        return returnValue;
     }
 
     protected void addEvent(OutputStream stream, int type, int code, int value) {
