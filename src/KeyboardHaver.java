@@ -89,7 +89,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
             OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
             stdin.write("search_string=ABS_MT_POSITION_X;"
                     + "picked_device=NO_DEVICE;"
-                    + "for index in $(ls /dev/input/event* | awk -F'/dev/input/event' '{print $2}' | sort -g); do"
+                    + "for index in $(ls /dev/input/event* | sed 's|.*/dev/input/event||g' | sort -g); do"
                     + "  device=/dev/input/event$index;"
                     + "  if getevent -lp $device | grep -q $search_string; then"
                     + "    picked_device=$device;"
