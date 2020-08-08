@@ -18,10 +18,11 @@ import java.util.Set;
 
 public class KeyboardHaverService extends AccessibilityService implements SharedPreferences.OnSharedPreferenceChangeListener {
     Map<Integer, PrimeTimeButton> keyFileMap;
+    Map<Integer, String> eventNamesByEventCode;
+    Map<Integer, Boolean> eventIsSupported;
     Map<Integer, Boolean> isPressed;
     Runtime runtime;
     String device;
-    boolean sendTouch = true;
     boolean somethingIsHeld;
     int keypressIndex = 0;
     Process inputProcess;
@@ -47,6 +48,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         somethingIsHeld = false;
         runtime = Runtime.getRuntime();
         final int width = 1080;
+
         Set<PrimeTimeButton> buttons = new HashSet<>();
 
         int slotIndex = 0;
@@ -67,9 +69,18 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
             isPressed.put(button.getKeyCode(), false);
         });
 
+        eventNamesByEventCode = new HashMap<>();
+        eventNamesByEventCode.put(BTN_TOUCH, "BTN_TOUCH");
+        eventNamesByEventCode.put(ABS_MT_SLOT, "ABS_MT_SLOT");
+        eventNamesByEventCode.put(ABS_MT_TRACKING_ID, "ABS_MT_TRACKING_ID");
+        eventNamesByEventCode.put(ABS_MT_TOUCH_MAJOR, "ABS_MT_TOUCH_MAJOR");
+        eventNamesByEventCode.put(ABS_MT_PRESSURE, "ABS_MT_PRESSURE");
+        eventNamesByEventCode.put(ABS_MT_POSITION_X, "ABS_MT_POSITION_X");
+        eventNamesByEventCode.put(ABS_MT_POSITION_Y, "ABS_MT_POSITION_Y");
+
         device = getDevice();
+        eventIsSupported = getSupportedEvents();
         eventBytes = new byte[16];
-        sendTouch = supportsBtnTouch();
 
         StartInputSendingProcess();
     }
@@ -130,27 +141,30 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         return result.toString();
     }
 
-    protected boolean supportsBtnTouch () {
-        boolean returnValue = true;
+    protected Map<Integer, Boolean> getSupportedEvents() {
+        Map<Integer, Boolean> eventIsSupported = new HashMap<>();
         try {
             Process deviceProcess = runtime.exec(new String[]{"su"});
             OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
-            stdin.write("getevent -l " + device + " | grep -m1 --line-buffered BTN_TOUCH &"
-                    + "sendevent " + device + " " + EV_KEY + " " + BTN_TOUCH + " " + DOWN + ";"
-                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
-                    + "sendevent " + device + " " + EV_KEY + " " + BTN_TOUCH + " " + UP + ";"
-                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
-                    + "kill -9 %;"
+            stdin.write("getevent -lp " + device + ";"
                     + "exit;"
                     + "\n"
             );
             stdin.flush();
             String outputString = getOutputString(deviceProcess);
-            returnValue = outputString.matches(".* BTN_TOUCH .*");
+            eventNamesByEventCode.forEach((eventCode, eventName) -> {
+                eventIsSupported.put(eventCode, outputString.matches(".* " + eventName + " .*"));
+            });
         } catch (IOException ioException) {
             System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
         }
-        return returnValue;
+        return eventIsSupported;
+    }
+
+    protected void addSupportedEvent(OutputStream stream, int type, int code, int value) {
+        if (eventIsSupported.get(code)) {
+            addEvent(stream, type, code, value);
+        }
     }
 
     protected void addEvent(OutputStream stream, int type, int code, int value) {
@@ -174,10 +188,10 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
 
     protected void WriteUpInputFile(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
-        addEvent(stream, EV_ABS, ABS_MT_PRESSURE, 0x00);
+        addSupportedEvent(stream, EV_ABS, ABS_MT_PRESSURE, 0x00);
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, 0xffffffff);
-        if (sendTouch && !somethingIsHeld) {
-            addEvent(stream, EV_KEY, BTN_TOUCH, UP);
+        if (!somethingIsHeld) {
+            addSupportedEvent(stream, EV_KEY, BTN_TOUCH, UP);
         }
         addEvent(stream, EV_SYN, SYN_REPORT, 0);
     }
@@ -196,10 +210,10 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex);
-        addEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
-        addEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
-        if (sendTouch && !somethingIsHeld) {
-            addEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
+        addSupportedEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
+        addSupportedEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
+        if (!somethingIsHeld) {
+            addSupportedEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
         }
         addEvent(stream, EV_ABS, ABS_MT_POSITION_X, button.getXPosition());
         addEvent(stream, EV_ABS, ABS_MT_POSITION_Y, button.getYPosition());
