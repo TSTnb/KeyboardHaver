@@ -34,6 +34,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
     private final int ABS_MT_SLOT = 0x2f;
     private final int ABS_MT_TRACKING_ID = 0x39;
     private final int ABS_MT_TOUCH_MAJOR = 0x86;
+    private final int ABS_MT_WIDTH_MAJOR = 0x32;
     private final int ABS_MT_PRESSURE = 0x3a;
     private final int ABS_MT_POSITION_X = 0x35;
     private final int ABS_MT_POSITION_Y = 0x36;
@@ -75,6 +76,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         eventNamesByEventCode.put(ABS_MT_SLOT, "ABS_MT_SLOT");
         eventNamesByEventCode.put(ABS_MT_TRACKING_ID, "ABS_MT_TRACKING_ID");
         eventNamesByEventCode.put(ABS_MT_TOUCH_MAJOR, "ABS_MT_TOUCH_MAJOR");
+        eventNamesByEventCode.put(ABS_MT_WIDTH_MAJOR, "ABS_MT_WIDTH_MAJOR");
         eventNamesByEventCode.put(ABS_MT_PRESSURE, "ABS_MT_PRESSURE");
         eventNamesByEventCode.put(ABS_MT_POSITION_X, "ABS_MT_POSITION_X");
         eventNamesByEventCode.put(ABS_MT_POSITION_Y, "ABS_MT_POSITION_Y");
@@ -279,6 +281,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex);
         addSupportedEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
+        addSupportedEvent(stream, EV_ABS, ABS_MT_WIDTH_MAJOR, button.RandomInt(6, 9));
         addSupportedEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
         if (!somethingIsHeld) {
             addSupportedEvent(stream, EV_KEY, BTN_TOUCH, DOWN);
