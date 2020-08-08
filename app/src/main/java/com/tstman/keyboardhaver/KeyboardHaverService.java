@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -80,7 +81,7 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
 
         device = getDevice();
         eventIsSupported = getSupportedEvents();
-        eventBytes = new byte[16];
+        eventBytes = getEventBytes();
 
         StartInputSendingProcess();
     }
@@ -141,6 +142,70 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         return result.toString();
     }
 
+    protected byte[] getOutputBytes(Process process) {
+        try {
+            process.waitFor();
+        } catch (InterruptedException interruptedException) {
+            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
+            return null;
+        }
+
+        byte[] buffer = new byte[256];
+        try {
+            byte[] bytes;
+            int bytesRead = process.getInputStream().read(buffer);
+            bytes = new byte[bytesRead];
+            System.arraycopy(buffer, 0, bytes, 0, bytesRead);
+            return bytes;
+        } catch (IOException exception) {
+            System.out.println("Problem printing stdout of process: " + exception.getMessage());
+        }
+        return null;
+    }
+
+    protected byte[] getEventBytes() {
+        try {
+            Process deviceProcess = runtime.exec(new String[]{"su"});
+            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
+            stdin.write("cat " + device + " &"
+                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_SLOT + " 0;"
+                    + "sendevent " + device + " " + EV_SYN + " " + ABS_MT_TRACKING_ID + " 0;"
+                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_X + " 0;"
+                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_Y + " 0;"
+                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
+                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_X + " 123;"
+                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_Y + " 123;"
+                    + "sendevent " + device + " " + EV_SYN + " " + ABS_MT_TRACKING_ID + " -1;"
+                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
+                    + "kill -9 %;"
+                    + "exit;"
+                    + "\n"
+            );
+            stdin.flush();
+            return getEventPadding(deviceProcess);
+        } catch (IOException ioException) {
+            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
+            return null;
+        }
+    }
+
+    protected byte[] getEventPadding(Process process) {
+        try {
+            process.waitFor();
+        } catch (InterruptedException interruptedException) {
+            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
+            return null;
+        }
+
+        String processOutput = new String(getOutputBytes(process), StandardCharsets.UTF_8);
+        int positionXIndex = processOutput.indexOf(new String(eventToBytes(EV_ABS, ABS_MT_POSITION_X, 123), StandardCharsets.UTF_8));
+        int positionYIndex = processOutput.indexOf(new String(eventToBytes(EV_ABS, ABS_MT_POSITION_Y, 123), StandardCharsets.UTF_8));
+        if (positionXIndex == -1 || positionYIndex == -1) {
+            System.out.println("Unable to determine how many bytes to pad events with");
+        }
+        return new byte[positionYIndex - positionXIndex - 8];
+    }
+
     protected Map<Integer, Boolean> getSupportedEvents() {
         Map<Integer, Boolean> eventIsSupported = new HashMap<>();
         try {
@@ -167,8 +232,8 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         }
     }
 
-    protected void addEvent(OutputStream stream, int type, int code, int value) {
-        byte[] inputBytes = {
+    protected byte[] eventToBytes(int type, int code, int value) {
+        return new byte[]{
                 (byte) (type & 0xff),
                 (byte) ((type >> 8) & 0xff),
                 (byte) (code & 0xff),
@@ -178,9 +243,12 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
                 (byte) ((value >> 16) & 0xff),
                 (byte) ((value >> 24) & 0xff),
         };
+    }
+
+    protected void addEvent(OutputStream stream, int type, int code, int value) {
         try {
             stream.write(eventBytes);
-            stream.write(inputBytes);
+            stream.write(eventToBytes(type, code, value));
         } catch (IOException ioException) {
             System.out.println("could not write bytes: " + ioException.getMessage());
         }
