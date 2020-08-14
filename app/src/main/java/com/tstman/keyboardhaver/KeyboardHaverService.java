@@ -51,21 +51,20 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
         isPressed = new HashMap<>();
         somethingIsHeld = false;
         runtime = Runtime.getRuntime();
-        final int width = 1080;
 
         Set<PrimeTimeButton> buttons = new HashSet<>();
 
         int slotIndex = 0;
 
-        buttons.add(new PrimeTimeButton("hard-drop", 62, width - 257, 2031, ++slotIndex));
+        buttons.add(new PrimeTimeButton("hard-drop", 62, 257, 2031, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("right", 22, width - 373, 2146, ++slotIndex));
-        buttons.add(new PrimeTimeButton("down", 20, width - 256, 2260, ++slotIndex));
-        buttons.add(new PrimeTimeButton("left", 21, width - 137, 2145, ++slotIndex));
+        buttons.add(new PrimeTimeButton("right", 22, 373, 2146, ++slotIndex));
+        buttons.add(new PrimeTimeButton("down", 20, 256, 2260, ++slotIndex));
+        buttons.add(new PrimeTimeButton("left", 21, 137, 2145, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("ccw", 54, width - 750, 2155, ++slotIndex));
-        buttons.add(new PrimeTimeButton("cw", 52, width - 948, 2040, ++slotIndex));
-        buttons.add(new PrimeTimeButton("hold", 31, width - 949, 1827, ++slotIndex));
+        buttons.add(new PrimeTimeButton("ccw", 54, 750, 2155, ++slotIndex));
+        buttons.add(new PrimeTimeButton("cw", 52, 948, 2040, ++slotIndex));
+        buttons.add(new PrimeTimeButton("hold", 31, 949, 1827, ++slotIndex));
 
         keyFileMap = new HashMap<>();
         buttons.forEach(button -> {
