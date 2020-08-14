@@ -1,6 +1,6 @@
 # Keyboard Haver
 
-The #1 tool for making you have things when it comes to keyboards
+The #1 app for making you have things when it comes to keyboards
 
 ## What this does
 
@@ -37,8 +37,10 @@ Keyboard Haver will never register multiple touchscreen touches for a single key
 
 9. Download a drawing app onto your phone like [Simple Draw Pro](https://play.google.com/store/apps/details?id=com.simplemobiletools.draw.pro)
 
-10. i.  Go to Settings -> Accessibility and enable the Keyboard Haver accessibility service (this is what detects the keyboard input to pass on to the touch screen)
-   ii. When you get a notification asking if you are okay with the KeyboardHaver app having root access, say *yes* if you are
+10.
+    i.  Go to Settings -> Accessibility and enable the Keyboard Haver accessibility service (this is what detects the keyboard input to pass on to the touch screen)
+
+    ii. When you get a notification asking if you are okay with the KeyboardHaver app having root access, say *yes* if you are
 
 11. Open the in-game screenshot you took in step 3 in your drawing app (like Simple Draw Pro)
 
