@@ -53,13 +53,13 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         int slotIndex = 0;
         buttons.add(new PrimeTimeButton("hard-drop", 32, width - 257, 2031, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("right", 74, width - 373, 2146, ++slotIndex));
-        buttons.add(new PrimeTimeButton("down", 75, width - 256, 2260, ++slotIndex));
-        buttons.add(new PrimeTimeButton("left", 76, width - 137, 2145, ++slotIndex));
+        buttons.add(new PrimeTimeButton("right", 39, width - 373, 2146, ++slotIndex));
+        buttons.add(new PrimeTimeButton("down", 40, width - 256, 2260, ++slotIndex));
+        buttons.add(new PrimeTimeButton("left", 37, width - 137, 2145, ++slotIndex));
 
-        buttons.add(new PrimeTimeButton("ccw", 68, width - 750, 2155, ++slotIndex));
-        buttons.add(new PrimeTimeButton("cw", 83, width - 948, 2040, ++slotIndex));
-        buttons.add(new PrimeTimeButton("hold", 70, width - 949, 1827, ++slotIndex));
+        buttons.add(new PrimeTimeButton("ccw", 90, width - 750, 2155, ++slotIndex));
+        buttons.add(new PrimeTimeButton("cw", 88, width - 948, 2040, ++slotIndex));
+        buttons.add(new PrimeTimeButton("hold", 67, width - 949, 1827, ++slotIndex));
 
         keyFileMap = new HashMap<>();
         isPressed = new HashMap<>();
