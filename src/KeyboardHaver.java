@@ -50,15 +50,16 @@ public class KeyboardHaver extends JFrame implements KeyListener {
 
         Set<PrimeTimeButton> buttons = new HashSet<>();
         int slotIndex = 0;
-        buttons.add(new PrimeTimeButton("hard-drop", 32, 257, 2031, ++slotIndex));
-
-        buttons.add(new PrimeTimeButton("right", 39, 373, 2146, ++slotIndex));
-        buttons.add(new PrimeTimeButton("down", 40, 256, 2260, ++slotIndex));
-        buttons.add(new PrimeTimeButton("left", 37, 137, 2145, ++slotIndex));
 
         buttons.add(new PrimeTimeButton("ccw", 90, 750, 2155, ++slotIndex));
         buttons.add(new PrimeTimeButton("cw", 88, 948, 2040, ++slotIndex));
         buttons.add(new PrimeTimeButton("hold", 67, 949, 1827, ++slotIndex));
+
+        buttons.add(new PrimeTimeButton("hard-drop", 32, 257, 2031, ++slotIndex));
+
+        buttons.add(new PrimeTimeButton("left", 37, 137, 2145, ++slotIndex));
+        buttons.add(new PrimeTimeButton("right", 39, 373, 2146, ++slotIndex));
+        buttons.add(new PrimeTimeButton("down", 40, 256, 2260, ++slotIndex));
 
         keyFileMap = new HashMap<>();
         isPressed = new HashMap<>();
