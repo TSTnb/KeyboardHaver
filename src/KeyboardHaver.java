@@ -35,6 +35,8 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     private final int ABS_MT_PRESSURE = 0x3a;
     private final int ABS_MT_POSITION_X = 0x35;
     private final int ABS_MT_POSITION_Y = 0x36;
+    private final int ABS_MT_TOOL_TYPE = 0x37;
+    private final int MT_TOOL_FINGER = 0x00;
     private final int SYN_REPORT = 0;
     private final int BTN_TOUCH = 0x14a;
     private final int DOWN = 1;
@@ -73,6 +75,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
         eventNamesByEventCode.put(ABS_MT_TOUCH_MAJOR, "ABS_MT_TOUCH_MAJOR");
         eventNamesByEventCode.put(ABS_MT_WIDTH_MAJOR, "ABS_MT_WIDTH_MAJOR");
         eventNamesByEventCode.put(ABS_MT_PRESSURE, "ABS_MT_PRESSURE");
+        eventNamesByEventCode.put(ABS_MT_TOOL_TYPE, "ABS_MT_TOOL_TYPE");
         eventNamesByEventCode.put(ABS_MT_POSITION_X, "ABS_MT_POSITION_X");
         eventNamesByEventCode.put(ABS_MT_POSITION_Y, "ABS_MT_POSITION_Y");
 
@@ -263,6 +266,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) {
         addEvent(stream, EV_ABS, ABS_MT_SLOT, button.getSlot());
         addEvent(stream, EV_ABS, ABS_MT_TRACKING_ID, keypressIndex);
+        addSupportedEvent(stream, EV_ABS, ABS_MT_TOOL_TYPE, MT_TOOL_FINGER);
         addSupportedEvent(stream, EV_ABS, ABS_MT_TOUCH_MAJOR, keypressIndex++);
         addSupportedEvent(stream, EV_ABS, ABS_MT_WIDTH_MAJOR, button.RandomInt(6, 9));
         addSupportedEvent(stream, EV_ABS, ABS_MT_PRESSURE, button.RandomInt(0x60, 0x90));
