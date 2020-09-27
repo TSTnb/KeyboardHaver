@@ -41,7 +41,6 @@ import java.util.Set;
 
 public class TSTgames extends AccessibilityService implements SharedPreferences.OnSharedPreferenceChangeListener {
     Map<Integer, PrimeTimeButton> keyFileMap;
-    Map<Integer, String> eventNamesByEventCode;
     Map<Integer, Boolean> eventIsSupported;
     Map<Integer, Boolean> isPressed;
     Runtime runtime;
@@ -81,13 +80,14 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
         int slotIndex = 0;
 
         buttons.add(new PrimeTimeButton("hard-drop", 62, 840, 2026, ++slotIndex));
+        buttons.add(new PrimeTimeButton("down", 39, 838, 2237, ++slotIndex));
 
         buttons.add(new PrimeTimeButton("right", 38, 737, 2131, ++slotIndex));
-        buttons.add(new PrimeTimeButton("down", 39, 838, 2237, ++slotIndex));
         buttons.add(new PrimeTimeButton("left", 40, 943, 2132, ++slotIndex));
 
         buttons.add(new PrimeTimeButton("ccw", 32, 327, 2190, ++slotIndex));
         buttons.add(new PrimeTimeButton("cw", 47, 142, 2196, ++slotIndex));
+
         buttons.add(new PrimeTimeButton("hold", 34, 234, 2034, ++slotIndex));
 
         keyFileMap = new HashMap<>();
@@ -95,17 +95,6 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
             keyFileMap.put(button.getKeyCode(), button);
             isPressed.put(button.getKeyCode(), false);
         });
-
-        eventNamesByEventCode = new HashMap<>();
-        eventNamesByEventCode.put(BTN_TOUCH, "BTN_TOUCH");
-        eventNamesByEventCode.put(ABS_MT_SLOT, "ABS_MT_SLOT");
-        eventNamesByEventCode.put(ABS_MT_TRACKING_ID, "ABS_MT_TRACKING_ID");
-        eventNamesByEventCode.put(ABS_MT_TOUCH_MAJOR, "ABS_MT_TOUCH_MAJOR");
-        eventNamesByEventCode.put(ABS_MT_WIDTH_MAJOR, "ABS_MT_WIDTH_MAJOR");
-        eventNamesByEventCode.put(ABS_MT_PRESSURE, "ABS_MT_PRESSURE");
-        eventNamesByEventCode.put(ABS_MT_TOOL_TYPE, "ABS_MT_TOOL_TYPE");
-        eventNamesByEventCode.put(ABS_MT_POSITION_X, "ABS_MT_POSITION_X");
-        eventNamesByEventCode.put(ABS_MT_POSITION_Y, "ABS_MT_POSITION_Y");
 
         pipedWriter = new PipedWriter();
         PipedReader pipedReader;
@@ -125,174 +114,6 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
         StartInputSendingProcess();*/
     }
 
-    protected String getDevice() {
-        try {
-            Process deviceProcess = runtime.exec(new String[]{"su"});
-            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
-            stdin.write("search_string=ABS_MT_POSITION_X;"
-                    + "picked_device=NO_DEVICE;"
-                    + "for index in $(ls /dev/input/event* | sed 's|.*/dev/input/event||g' | sort -g); do"
-                    + "  device=/dev/input/event$index;"
-                    + "  if getevent -lp $device | grep -q $search_string; then"
-                    + "    picked_device=$device;"
-                    + "    break;"
-                    + "  fi;"
-                    + "done;"
-                    + "echo $picked_device;"
-                    + "exit;\n"
-            );
-            stdin.flush();
-            String device = getOutputString(deviceProcess);
-            if (device.equals("NO_DEVICE")) {
-                System.out.println("Unable to get device");
-                printStuff(deviceProcess);
-            }
-            return device;
-        } catch (IOException ioException) {
-            System.out.println("Unable to start the process that detects your touchscreen device: " + ioException.getMessage());
-            return null;
-        }
-    }
-
-    protected String getOutputString(Process process) {
-        try {
-            process.waitFor();
-        } catch (InterruptedException interruptedException) {
-            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
-            return null;
-        }
-
-        BufferedReader processOutput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        StringBuilder result = new StringBuilder();
-        String line;
-        try {
-            do {
-                line = processOutput.readLine();
-                if (line != null) {
-                    result.append(line);
-                }
-            } while (line != null);
-        } catch (IOException exception) {
-            System.out.println("Problem printing stdout of process: " + exception.getMessage());
-        }
-        if (result.length() == 0) {
-            printStuff(process);
-        }
-        return result.toString();
-    }
-
-    protected byte[] getOutputBytes(Process process) {
-        try {
-            process.waitFor();
-        } catch (InterruptedException interruptedException) {
-            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
-            return null;
-        }
-
-        byte[] buffer = new byte[256];
-        try {
-            byte[] bytes;
-            int bytesRead = process.getInputStream().read(buffer);
-            bytes = new byte[bytesRead];
-            System.arraycopy(buffer, 0, bytes, 0, bytesRead);
-            return bytes;
-        } catch (IOException exception) {
-            System.out.println("Problem printing stdout of process: " + exception.getMessage());
-        }
-        return null;
-    }
-
-    protected byte[] getEventBytes() {
-        try {
-            Process deviceProcess = runtime.exec(new String[]{"su"});
-            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
-            stdin.write("cat " + device + " &"
-                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_SLOT + " 0;"
-                    + "sendevent " + device + " " + EV_SYN + " " + ABS_MT_TRACKING_ID + " 0;"
-                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_X + " 0;"
-                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_Y + " 0;"
-                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
-                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_X + " 123;"
-                    + "sendevent " + device + " " + EV_ABS + " " + ABS_MT_POSITION_Y + " 123;"
-                    + "sendevent " + device + " " + EV_SYN + " " + ABS_MT_TRACKING_ID + " -1;"
-                    + "sendevent " + device + " " + EV_SYN + " " + SYN_REPORT + " 0;"
-                    + "kill -9 %;"
-                    + "exit;"
-                    + "\n"
-            );
-            stdin.flush();
-            return getEventPadding(deviceProcess);
-        } catch (IOException ioException) {
-            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
-            return null;
-        }
-    }
-
-    protected byte[] getEventPadding(Process process) {
-        try {
-            process.waitFor();
-        } catch (InterruptedException interruptedException) {
-            System.out.println("Could not wait for the process to exit: " + interruptedException.getMessage());
-            return null;
-        }
-
-        String processOutput = new String(getOutputBytes(process), StandardCharsets.UTF_8);
-        int positionXIndex = processOutput.indexOf(new String(eventToBytes(EV_ABS, ABS_MT_POSITION_X, 123), StandardCharsets.UTF_8));
-        int positionYIndex = processOutput.indexOf(new String(eventToBytes(EV_ABS, ABS_MT_POSITION_Y, 123), StandardCharsets.UTF_8));
-        if (positionXIndex == -1 || positionYIndex == -1) {
-            System.out.println("Unable to determine how many bytes to pad events with");
-        }
-        return new byte[positionYIndex - positionXIndex - 8];
-    }
-
-    protected Map<Integer, Boolean> getSupportedEvents() {
-        Map<Integer, Boolean> eventIsSupported = new HashMap<>();
-        try {
-            Process deviceProcess = runtime.exec(new String[]{"su"});
-            OutputStreamWriter stdin = new OutputStreamWriter(deviceProcess.getOutputStream());
-            stdin.write("getevent -lp " + device + ";"
-                    + "exit;"
-                    + "\n"
-            );
-            stdin.flush();
-            String outputString = getOutputString(deviceProcess);
-            eventNamesByEventCode.forEach((eventCode, eventName) -> {
-                eventIsSupported.put(eventCode, outputString.matches(".* " + eventName + " .*"));
-            });
-        } catch (IOException ioException) {
-            System.out.println("Unable to start the process that gets the event bytes: " + ioException.getMessage());
-        }
-        return eventIsSupported;
-    }
-
-    protected void addSupportedEvent(OutputStream stream, int type, int code, int value) {
-        if (eventIsSupported.get(code)) {
-            addEvent(stream, type, code, value);
-        }
-    }
-
-    protected byte[] eventToBytes(int type, int code, int value) {
-        return new byte[]{
-                (byte) (type & 0xff),
-                (byte) ((type >> 8) & 0xff),
-                (byte) (code & 0xff),
-                (byte) ((code >> 8) & 0xff),
-                (byte) (value & 0xff),
-                (byte) ((value >> 8) & 0xff),
-                (byte) ((value >> 16) & 0xff),
-                (byte) ((value >> 24) & 0xff),
-        };
-    }
-
-    protected void addEvent(OutputStream stream, int type, int code, int value) {
-        try {
-            stream.write(eventBytes);
-            stream.write(eventToBytes(type, code, value));
-        } catch (IOException ioException) {
-            System.out.println("could not write bytes: " + ioException.getMessage());
-        }
-    }
-
     protected void WriteUpInputFile(final PrimeTimeButton button, OutputStream stream) throws IOException {
         pipedWriter.write('u');
         pipedWriter.write(button.getSlot());
@@ -307,17 +128,6 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
             addSupportedEvent(stream, EV_KEY, BTN_TOUCH, UP);
         }
         addEvent(stream, EV_SYN, SYN_REPORT, 0);*/
-    }
-
-    protected void StartInputSendingProcess() {
-        String[] pipeCommand = new String[]{"su", "-c", "tee " + device + " >/dev/null"};
-        try {
-            inputProcess = runtime.exec(pipeCommand);
-            thingToSendTo = inputProcess.getOutputStream();
-        } catch (IOException ioException) {
-            System.out.println("Unable to start input-sending process: " + ioException.getMessage());
-            System.exit(1);
-        }
     }
 
     protected void WriteInput(final PrimeTimeButton button, OutputStream stream) throws IOException {
@@ -341,107 +151,6 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
         addEvent(stream, EV_ABS, ABS_MT_POSITION_Y, button.getYPosition());
         addEvent(stream, EV_SYN, SYN_REPORT, 0);
         */
-    }
-
-    private void doThatGesture(PrimeTimeButton button) {
-        final int connectionId = (int) getPrivateMember(this, "android.accessibilityservice.AccessibilityService", "mConnectionId");
-        final Object accessibilityInteractionClient = callPrivateMethod(
-                null,
-                "android.view.accessibility.AccessibilityInteractionClient",
-                "getInstance",
-                new Class[]{},
-                new Object[]{}
-        );
-        final Object accessibilityServiceConnection = callPrivateMethod(
-                accessibilityInteractionClient,
-                "android.view.accessibility.AccessibilityInteractionClient",
-                "getConnection",
-                new Class[]{int.class},
-                new Object[]{connectionId}
-        );
-        final Class classy = accessibilityServiceConnection.getClass();
-        final String stringy = classy.toString();
-        final Object systemSupport = getPrivateMember(accessibilityServiceConnection, "com.android.server.accessibility.AccessibilityServiceConnection", "mSystemSupport");
-        dispatchGesture(createClick(button.getXPosition(), button.getYPosition()), new AccessibilityService.GestureResultCallback() {
-            @Override
-            public void onCompleted(GestureDescription gestureDescription) {
-                super.onCompleted(gestureDescription);
-                Log.d("tstgames", "gesture completed");
-            }
-
-            @Override
-            public void onCancelled(GestureDescription gestureDescription) {
-                super.onCancelled(gestureDescription);
-                Log.d("tstgames", "gesture cancelled");
-            }
-        }, null);
-    }
-
-    protected Object callPrivateMethod(Object object, String className, String methodName, Class[] argumentTypes, Object[] arguments) {
-        final Class classReference;
-        final Method method;
-        Object result = null;
-        try {
-            classReference = Class.forName(className);
-        } catch (ClassNotFoundException exception) {
-            Log.w("tstgames", "aw, " + className + " class is not found: " + exception.getMessage());
-            return null;
-        }
-
-        try {
-            method = classReference.getMethod(methodName, argumentTypes);
-        } catch (NoSuchMethodException exception) {
-            exception.printStackTrace();
-            return null;
-        }
-
-        try {
-            result = method.invoke(object, arguments);
-        } catch (IllegalAccessException | InvocationTargetException exception) {
-            exception.printStackTrace();
-        }
-        return result;
-    }
-
-    protected Object getPrivateMember(Object object, String className, String fieldName) {
-        final Class classReference;
-        final Field field;
-        final Object member;
-
-        try {
-            classReference = Class.forName(className);
-        } catch (ClassNotFoundException exception) {
-            Log.w("tstgames", "aw, " + className + " class is not found: " + exception.getMessage());
-            return null;
-        }
-
-        try {
-            field = classReference.getDeclaredField(fieldName);
-            field.setAccessible(true);
-        } catch (NoSuchFieldException exception) {
-            Log.w("tstgames", "aw, " + fieldName + " field is not found: " + exception.getMessage());
-            return null;
-        }
-        try {
-            member = field.get(object);
-        } catch (IllegalAccessException exception) {
-            Log.w("tstgames", "aw, could not get that " + fieldName + " field: " + exception.getMessage());
-            return null;
-        }
-        return member;
-    }
-
-    private static GestureDescription createClick(float x, float y) {
-        // for a single tap a duration of 1 ms is enough
-        final int DURATION = 1;
-
-        Path clickPath = new Path();
-        clickPath.moveTo(x, y);
-        GestureDescription.StrokeDescription clickStroke =
-                new GestureDescription.StrokeDescription(clickPath, 0, DURATION);
-        GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
-        clickBuilder.addStroke(clickStroke);
-        return clickBuilder.build();
     }
 
     private void printStuff(Process process) {
@@ -488,12 +197,6 @@ public class TSTgames extends AccessibilityService implements SharedPreferences.
         this.activity = activity;
         doThingy(activity);
     }
-
-    private NotificationManager mNM;
-
-    // Unique Identification Number for the Notification.
-    // We use it on Notification start, and to cancel it.
-    private int NOTIFICATION = R.string.local_service_started;
 
     public class LocalBinder extends Binder {
         public TSTgames getService() {

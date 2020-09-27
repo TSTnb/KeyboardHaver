@@ -1,5 +1,6 @@
 package com.tstman.tstgames.service;
 
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.hardware.input.InputManager;
@@ -112,6 +113,7 @@ public class ScreenPresser extends InputMethodService {
         }
     }
 
+    @SuppressLint("DiscouragedPrivateApi")
     private static Method getInjectInputEvent() throws NoSuchMethodException {
 
         Class<InputManager> cl = InputManager.class;
@@ -120,6 +122,7 @@ public class ScreenPresser extends InputMethodService {
         return method;
     }
 
+    @SuppressLint("DiscouragedPrivateApi")
     private static InputManager getInputManager() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Class<InputManager> cl = InputManager.class;
         Method method = cl.getDeclaredMethod("getInstance");

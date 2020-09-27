@@ -17,4 +17,9 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="label_service_keyboard_haver">Have Keyboard</string>
+    <string name="label_service_screen_presser">Screen Presser</string>
+    <string name="accessibility_service_description">Enable KeyboardHaver to have a keyboard.</string>
+    <string name="accessibility_service_summary">Makes you have a keyboard</string>
+    <string name="local_service_started">Local service has started.</string>
 </resources>

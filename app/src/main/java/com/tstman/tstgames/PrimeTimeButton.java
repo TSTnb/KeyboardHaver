@@ -1,11 +1,15 @@
 package com.tstman.tstgames;
 
+import android.view.MotionEvent;
+
 public class PrimeTimeButton {
-    final String name;
+    public final String name;
     final int keyCode;
-    final int xPosition;
-    final int yPosition;
-    final int slot;
+    int slot;
+    int xPosition;
+    int yPosition;
+    public MotionEvent.PointerCoords pointerCoords;
+    public MotionEvent.PointerProperties pointerProperties;
 
     public PrimeTimeButton(final String name, final int keyCode, final int xPosition, final int yPosition, final int slot) {
         this.name = name;
@@ -32,6 +36,20 @@ public class PrimeTimeButton {
     }
 
     public int RandomInt(int min, int max) {
-        return min + (int) (Math.random() * (max - min) + 1);
+        return 0;
+        //return min + (int) (Math.random() * (max - min) + 1);
+    }
+
+    public PrimeTimeButton(String name, int slot) {
+        this.name = name;
+        keyCode = 0;
+        pointerCoords = new MotionEvent.PointerCoords();
+        pointerProperties = new MotionEvent.PointerProperties();
+        pointerProperties.id = slot;
+    }
+
+    public void down(int x, int y) {
+        pointerCoords.x = x;
+        pointerCoords.y = y;
     }
 }
