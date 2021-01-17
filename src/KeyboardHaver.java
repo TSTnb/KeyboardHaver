@@ -279,7 +279,7 @@ public class KeyboardHaver extends JFrame implements KeyListener {
     }
 
     protected void StartInputSendingProcess() {
-        String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "'tee " + device + " >/dev/null'"};
+        String[] pipeCommand = new String[]{"adb", "shell", "su", "-c", "tee " + device + " >/dev/null"};
         try {
             inputProcess = runtime.exec(pipeCommand);
             thingToSendTo = inputProcess.getOutputStream();
