@@ -344,6 +344,9 @@ public class KeyboardHaverService extends AccessibilityService implements Shared
 
     public void onDestroy() {
         super.onDestroy();
+        if (inputProcess.isAlive()) {
+            inputProcess.destroy();
+        }
         Log.w("keyboardhaver", "aww it was destroyed");
     }
 
